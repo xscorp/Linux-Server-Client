@@ -3,7 +3,7 @@
 import socket
 import sys
 
-if len(sys.argv) != 2:
+def printUsage():
 	print("[ERROR]: Invalid number of arguments!")
 	print(
 	"\nUSAGE:\n"+
@@ -11,6 +11,14 @@ if len(sys.argv) != 2:
 	"$ ./server.py [port]\n"+
 	"[NOTE] You need to be root for using port below 1025\n\n")
 	sys.exit()
+
+def errorExit():
+	client_socket.close()
+	sys.exit()
+
+
+if len(sys.argv) != 2:
+	printUsage()
 
 #check if the port number entered by user is numeric or not
 try:
@@ -35,8 +43,8 @@ try:
 	server_socket.bind(("127.0.0.1" , port))
 except socket.error:
 	print("[ERROR]: bind(): " , socket.error)
-	server_socket.close()
-	sys.exit()
+	errorExit()
+	
 else:
 	print("[+]IP address and port is binded to socket")
 
@@ -46,8 +54,8 @@ try:
 	server_socket.listen(5)
 except socket.error:
 	print("[ERROR]: listen(): " , socket.error)
-	server_socket.close()
-	sys.exit()
+	errorExit()
+	
 else:
 	print("[+]Server listening for incomming connections")
 	
@@ -56,28 +64,41 @@ try:
 	client_socket , client_address = server_socket.accept()
 except socket.error:
 	print("[ERROR]: accept(): " , socket.error)
+	errorExit()
 else:
 	print("\n***Received connection from:" , client_address[0] , "***")
 	
 
 #talking to client
 while True:
-	print("You:")
+	print("\nYou:")
 	try:
 		#the data must be sent in the form of byte string and not string
 		#To convert data to byte string, encode() is used
 		client_socket.sendall(input().encode())
-	except:
+
+	except socket.error:
 		print("[ERROR]: sendall(): " , socket.error)
+		errorExit()
+	
+	except:
+		print("\n[+]You closed the connection\n")
+		errorExit()
 		
 	try:
 		client_message = client_socket.recv(1024)	
 		if len(client_message) == 0:		#0 bytes received
 			print("\n\nConnection closed by the client!")
-			server_socket.close()
-			sys.exit()
+			errorExit()
+			
 	except socket.error:
 		print("[ERROR]: recv(): " , socket.error)
+		errorExit()
+		
+	except:
+		print("\n[+]Connection closed!")
+		errorExit()
+		
 	else:
 		print("\nThey:")
 		#data received is of type 'byte'. Decode it in either ASCII or UTF-8
